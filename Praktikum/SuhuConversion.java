@@ -1,7 +1,10 @@
+import java.util.Scanner;
+
 public class SuhuConversion {
     public static void main(String[] args) {
         // initialize
-        float celcius = 29;
+        Scanner input = new Scanner(System.in);
+        float celcius = input.nextFloat();
         // print celcius value
         System.out.println("Celcius       : " + celcius);
 
