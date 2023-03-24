@@ -48,5 +48,4 @@ public class FormatCalculateValue {
         System.out.println("Final UAS     : " + fuas);
         System.out.println("Final Value   : " + na);
     }
-
 }
