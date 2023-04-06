@@ -13,7 +13,7 @@ public class SecondConversion {
             System.out.print("Input data lagi[Y/T] ? ");
             confirm = input.next().charAt(0);
         }while(confirm=='Y' || confirm=='y');
-    }   
+    }
     static void conversion(int second) {
         int day, hour, minute;
         minute = second/60;

@@ -14,13 +14,5 @@ public class Array1 {
         for(int i = 0; i < jData; i++) {
             System.out.println("Hasil nilai[" + i + "] = " + aData[i]);
         }
-        // input(jData);
-        // output(jData);
     }
-
-    // static void input(int jData) {
-    // }
-
-    // static void output(int jData) {
-    // }
 }

@@ -10,7 +10,7 @@ public class ForLoop {
         System.out.print("Bilangan: ");
         int bil = input.nextInt();
         forLoop(bil, 5);
-        System.out.print("Dipecah: ");
+        System.out.print("\nDipecah: ");
         int dip = input.nextInt();
         forLoop(bil, dip);
     }
