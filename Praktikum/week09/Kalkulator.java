@@ -41,6 +41,7 @@ public class Kalkulator extends javax.swing.JFrame {
         btnAkar = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Kalkulator ");
 
         jLabel1.setText("Nilai Kedua");
 
@@ -240,6 +241,15 @@ public class Kalkulator extends javax.swing.JFrame {
 
     private void btnAkarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAkarActionPerformed
         // TODO add your handling code here:
+        try {
+            double n1 = Integer.parseInt(txtNilai1.getText());
+            int n2 = Integer.parseInt(txtNilai2.getText());
+            double hasil = Math.pow(n1, 1.0 / n2);
+            txtHasil.setText(Double.toString(hasil));
+        }
+        catch(NumberFormatException e){
+            JOptionPane.showInternalMessageDialog(null, "Data Masih Kosong");
+        }
     }//GEN-LAST:event_btnAkarActionPerformed
 
     /**
