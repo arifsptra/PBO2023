@@ -17,7 +17,7 @@ public class FormDataBarang {
     String sSatuan;
     Boolean edit = false;
     private Object[][] dataTable = null;
-    private String[] header = {"Kode", "Nama Barang", "Satuan", "Harga", "Stok", "Stok Min"};
+    private String[] header = {"Kode", "Nama Barang", "Satuan", "Harga Beli", "Harga Jual", "Stok", "Stok Min"};
     private JPanel RootPane;
     private JTextField textKode;
     private JComboBox cmbSatuan;
@@ -29,9 +29,11 @@ public class FormDataBarang {
     private JButton btnHapus;
     private JButton btnBatal;
     private JTextField textNama;
-    private JTextField textHarga;
+    private JTextField textHargaBeli;
     private JTextField textStok;
     private JTextField textStokMin;
+    private JTextField textHargaJual;
+
     public FormDataBarang() {
         connectDB();
         baca_data();
@@ -62,16 +64,17 @@ public class FormDataBarang {
                 String tKode=textKode.getText();
                 String tNama=textNama.getText();
                 sSatuan = cmbSatuan.getSelectedItem().toString();
-                double hrg=Double.parseDouble(textHarga.getText());
+                double hrgBeli=Double.parseDouble(textHargaBeli.getText());
+                double hrgJual=Double.parseDouble(textHargaJual.getText());
                 int stk=Integer.parseInt(textStok.getText());
                 int stkMin=Integer.parseInt(textStokMin.getText());
                 try{
                     if (edit==true)
                     {
-                        stm.executeUpdate("update barang set nm_brg='"+tNama+"',satuan='"+sSatuan+"',harga_beli="+hrg+",harga_jual="+(hrg+5000)+",stok="+stk+",stok_min="+stkMin+" where kd_brg='" + tKode + "'");
+                        stm.executeUpdate("update barang set nm_brg='"+tNama+"',satuan='"+sSatuan+"',harga_beli="+hrgBeli+",harga_jual="+hrgJual+",stok="+stk+",stok_min="+stkMin+" where kd_brg='" + tKode + "'");
                     }else
                     {
-                        stm.executeUpdate("INSERT into barang VALUES('"+tKode+"','"+tNama+"','"+sSatuan+"',"+hrg+","+(hrg+5000)+","+stk+","+stkMin+")");
+                        stm.executeUpdate("INSERT into barang VALUES('"+tKode+"','"+tNama+"','"+sSatuan+"',"+hrgBeli+","+hrgJual+","+stk+","+stkMin+")");
                     }
                     tableBarang.setModel(new DefaultTableModel(dataTable,header));
                     baca_data();
@@ -144,11 +147,13 @@ public class FormDataBarang {
         textKode.setText((String)tableBarang.getValueAt(row,0));
         textNama.setText((String)tableBarang.getValueAt(row,1));
         cmbSatuan.setSelectedItem((String)tableBarang.getValueAt(row,2));
-        String harga = Double.toString((Double)tableBarang.getValueAt(row,3));
-        textHarga.setText(harga);
-        String stok=Integer.toString((Integer)tableBarang.getValueAt(row,4));
+        String hargaJual = Double.toString((Double)tableBarang.getValueAt(row,3));
+        textHargaJual.setText(hargaJual);
+        String hargaBeli = Double.toString((Double)tableBarang.getValueAt(row,4));
+        textHargaBeli.setText(hargaBeli);
+        String stok=Integer.toString((Integer)tableBarang.getValueAt(row,5));
         textStok.setText(stok);
-        String stokmin=Integer.toString((Integer)tableBarang.getValueAt(row,5));
+        String stokmin=Integer.toString((Integer)tableBarang.getValueAt(row,6));
         textStokMin.setText(stokmin);
     }
 
@@ -171,8 +176,9 @@ public class FormDataBarang {
                 dataTable[x][1] = rsBrg.getString("nm_brg");
                 dataTable[x][2] = rsBrg.getString("satuan");
                 dataTable[x][3] = rsBrg.getDouble("harga_jual");
-                dataTable[x][4] = rsBrg.getInt("stok");
-                dataTable[x][5] = rsBrg.getInt("stok_min");
+                dataTable[x][4] = rsBrg.getDouble("harga_beli");
+                dataTable[x][5] = rsBrg.getInt("stok");
+                dataTable[x][6] = rsBrg.getInt("stok_min");
                 x++;
             }
             tableBarang.setModel(new DefaultTableModel(dataTable,header));
@@ -187,7 +193,8 @@ public class FormDataBarang {
     private void kosong() {
         textKode.setText("");
         textNama.setText("");
-        textHarga.setText("");
+        textHargaBeli.setText("");
+        textHargaJual.setText("");
         textStok.setText("");
         textStokMin.setText("");
     }
@@ -198,7 +205,8 @@ public class FormDataBarang {
         textNama.setEditable(x);
         //cmbSatuan.setEditable(x);
         cmbSatuan.setEnabled(x);
-        textHarga.setEditable(x);
+        textHargaBeli.setEditable(x);
+        textHargaJual.setEditable(x);
         textStok.setEditable(x);
         textStokMin.setEditable(x);
     }
