@@ -47,7 +47,7 @@ public class FormTransaksi extends javax.swing.JFrame {
         xjml=Integer.parseInt(txtJmlBrg.getText());
         xtot=xhrg*xjml;
         String xtotal=Double.toString(xtot);
-        txtTotal.setText(xtotal);
+        txtTotHrg.setText(xtotal);
         total=total+xtot;
         txtTotal.setText(Double.toString(total));
     }
@@ -56,7 +56,7 @@ public class FormTransaksi extends javax.swing.JFrame {
         try{
             KoneksiMysql kon = new KoneksiMysql("localhost","arif","Koentj1@$","db_pbo_penjualan");
             Con = kon.getConnection();
-        //System.out.println("Berhasil ");
+        System.out.println("Berhasil ");
         } catch (Exception e) {
             System.out.println("Error : "+e);
         }
@@ -64,7 +64,7 @@ public class FormTransaksi extends javax.swing.JFrame {
     //methohd baca data konsumen
     private void baca_konsumen() {
         try {
-            stm=Con.createStatement();
+            stm=Con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs=stm.executeQuery("select kd_kons, nm_kons from konsumen");
             rs.beforeFirst();
             while(rs.next()) {
@@ -78,7 +78,7 @@ public class FormTransaksi extends javax.swing.JFrame {
     //method baca data barang
     private void baca_barang() {
         try {
-            stm=Con.createStatement();
+            stm=Con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs=stm.executeQuery("select * from barang");
             rs.beforeFirst();
             while(rs.next()) {
@@ -92,7 +92,7 @@ public class FormTransaksi extends javax.swing.JFrame {
     //method baca barang setelah combo barang di klik
     private void detail_barang(String xkode) {
         try{
-            stm=Con.createStatement();
+            stm=Con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs=stm.executeQuery("select * from barang where kd_brg='"+xkode+"'");
             rs.beforeFirst();
             while(rs.next()) {
@@ -107,7 +107,7 @@ public class FormTransaksi extends javax.swing.JFrame {
     //method baca konsumen setelah combo konsumen di klik
     private void detail_konsumen(String xkode) {
         try{
-            stm=Con.createStatement();
+            stm=Con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs=stm.executeQuery("select * from konsumen where kd_kons='"+xkode+"'");
             rs.beforeFirst();
             while(rs.next()) {
@@ -134,10 +134,10 @@ public class FormTransaksi extends javax.swing.JFrame {
     //---
     //method kosongkan detail jual
     private void kosong_detail() {
-        txtNamaBrg.setText("");
+        txtNamaKons.setText("");
         txtHrgBrg.setText("");
         txtJmlBrg.setText("");
-        txtTotBrg.setText("");
+        txtTotHrg.setText("");
     }
     //method aktif on/off isian
     private void aktif(boolean x) {
@@ -182,7 +182,7 @@ public class FormTransaksi extends javax.swing.JFrame {
             String tNama=txtNamaBrg.getText();
             double hrg=Double.parseDouble(txtHrgBrg.getText());
             int jml=Integer.parseInt(txtJmlBrg.getText());
-            double tot=Double.parseDouble(txtTotBrg.getText());
+            double tot=Double.parseDouble(txtTotHrg.getText());
             tableModel.addRow(new Object[]{tKode,tNama,hrg,jml,tot});
             inisialisasi_tabel();
         } catch(Exception e) {
@@ -244,7 +244,7 @@ public class FormTransaksi extends javax.swing.JFrame {
         txtNamaBrg = new javax.swing.JTextField();
         txtHrgBrg = new javax.swing.JTextField();
         txtJmlBrg = new javax.swing.JTextField();
-        txtTotBrg = new javax.swing.JTextField();
+        txtTotHrg = new javax.swing.JTextField();
         btnHapusItem = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         tblJual = new javax.swing.JTable();
@@ -287,9 +287,26 @@ public class FormTransaksi extends javax.swing.JFrame {
 
         txtTglJual.setModel(new javax.swing.SpinnerDateModel(new java.util.Date(1690523520000L), null, null, java.util.Calendar.DAY_OF_WEEK_IN_MONTH));
 
-        cmbKons.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbKons.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cmbKonsItemStateChanged(evt);
+            }
+        });
+        cmbKons.addAncestorListener(new javax.swing.event.AncestorListener() {
+            public void ancestorAdded(javax.swing.event.AncestorEvent evt) {
+                cmbKonsAncestorAdded(evt);
+            }
+            public void ancestorMoved(javax.swing.event.AncestorEvent evt) {
+            }
+            public void ancestorRemoved(javax.swing.event.AncestorEvent evt) {
+            }
+        });
+        cmbKons.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbKonsActionPerformed(evt);
+            }
+        });
 
-        cmbBrg.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         cmbBrg.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cmbBrgActionPerformed(evt);
@@ -302,7 +319,18 @@ public class FormTransaksi extends javax.swing.JFrame {
             }
         });
 
+        txtJmlBrg.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtJmlBrgActionPerformed(evt);
+            }
+        });
+
         btnHapusItem.setText("Hapus Item");
+        btnHapusItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusItemActionPerformed(evt);
+            }
+        });
 
         tblJual.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -327,12 +355,27 @@ public class FormTransaksi extends javax.swing.JFrame {
         });
 
         btnSimpan.setText("Simpan");
+        btnSimpan.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanActionPerformed(evt);
+            }
+        });
 
         btnBatal.setText("Batal");
+        btnBatal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnBatalActionPerformed(evt);
+            }
+        });
 
         btnCetak.setText("Cetak");
 
         btnKeluar.setText("Keluar");
+        btnKeluar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnKeluarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -381,7 +424,7 @@ public class FormTransaksi extends javax.swing.JFrame {
                                         .addGap(28, 28, 28)))
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(txtNamaKons, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(txtTotBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtTotHrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(cmbKons, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
@@ -414,7 +457,7 @@ public class FormTransaksi extends javax.swing.JFrame {
                     .addComponent(cmbBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtHrgBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtJmlBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txtTotBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtTotHrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtNamaBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(btnHapusItem)
@@ -447,11 +490,59 @@ public class FormTransaksi extends javax.swing.JFrame {
 
     private void cmbBrgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbBrgActionPerformed
         // TODO add your handling code here:
+        detail_barang(cmbBrg.getSelectedItem().toString());
     }//GEN-LAST:event_cmbBrgActionPerformed
 
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
         // TODO add your handling code here:
+        aktif(true);
+        setTombol(false);
+        baca_konsumen();
+        baca_barang();
     }//GEN-LAST:event_btnTambahActionPerformed
+
+    private void btnHapusItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusItemActionPerformed
+        // TODO add your handling code here:
+        kosong();
+        kosong_detail();
+    }//GEN-LAST:event_btnHapusItemActionPerformed
+
+    private void cmbKonsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbKonsActionPerformed
+        // TODO add your handling code here:
+        detail_konsumen(cmbKons.getSelectedItem().toString());
+    }//GEN-LAST:event_cmbKonsActionPerformed
+
+    private void cmbKonsItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cmbKonsItemStateChanged
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbKonsItemStateChanged
+
+    private void cmbKonsAncestorAdded(javax.swing.event.AncestorEvent evt) {//GEN-FIRST:event_cmbKonsAncestorAdded
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbKonsAncestorAdded
+
+    private void txtJmlBrgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtJmlBrgActionPerformed
+        // TODO add your handling code here:
+        hitung_jual();
+    }//GEN-LAST:event_txtJmlBrgActionPerformed
+
+    private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
+        // TODO add your handling code here:
+        simpan_ditabel();
+        simpan_transaksi();
+    }//GEN-LAST:event_btnSimpanActionPerformed
+
+    private void btnBatalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBatalActionPerformed
+        // TODO add your handling code here:
+        aktif(false);
+        setTombol(true);
+        kosong();
+        kosong_detail();
+    }//GEN-LAST:event_btnBatalActionPerformed
+
+    private void btnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnKeluarActionPerformed
+        // TODO add your handling code here:
+        System.exit(0);
+    }//GEN-LAST:event_btnKeluarActionPerformed
 
     /**
      * @param args the command line arguments
@@ -512,7 +603,7 @@ public class FormTransaksi extends javax.swing.JFrame {
     private javax.swing.JTextField txtNamaKons;
     private javax.swing.JTextField txtNoJual;
     private javax.swing.JSpinner txtTglJual;
-    private javax.swing.JTextField txtTotBrg;
+    private javax.swing.JTextField txtTotHrg;
     private javax.swing.JTextField txtTotal;
     // End of variables declaration//GEN-END:variables
 }
