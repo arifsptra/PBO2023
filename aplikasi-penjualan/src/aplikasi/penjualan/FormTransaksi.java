@@ -4,19 +4,223 @@
  */
 package aplikasi.penjualan;
 
+import java.sql.*;
+import java.util.Calendar;
+import javax.swing.JSpinner;
+import javax.swing.table.DefaultTableModel;
+
 /**
  *
  * @author arif
  */
 public class FormTransaksi extends javax.swing.JFrame {
+    Connection Con;
+    ResultSet RsBrg;
+    ResultSet RsKons;
+    Statement stm;
+    double total=0;
+    String tanggal;
+    Boolean edit=false;
+    DefaultTableModel tableModel = new DefaultTableModel(
+        new Object [][] {},
+        new String [] {
+        "Kd Barang", "Nama Barang", "Harga Barang", "Jumlah", "Total"
+    });
 
     /**
      * Creates new form FormTransaksi
      */
     public FormTransaksi() {
         initComponents();
+        open_db();
+        inisialisasi_tabel();
+        aktif(false);
+        setTombol(true);
+        txtTglJual.setEditor(new JSpinner.DateEditor(txtTglJual, "yyyy/MM/dd"));
     }
-
+    
+    //method hitung penjualan
+    private void hitung_jual() {
+        double xtot,xhrg;
+        int xjml;
+        xhrg=Double.parseDouble(txtHrgBrg.getText());
+        xjml=Integer.parseInt(txtJmlBrg.getText());
+        xtot=xhrg*xjml;
+        String xtotal=Double.toString(xtot);
+        txtTotal.setText(xtotal);
+        total=total+xtot;
+        txtTotal.setText(Double.toString(total));
+    }
+    //method buka database
+    private void open_db() {
+        try{
+            KoneksiMysql kon = new KoneksiMysql("localhost","arif","Koentj1@$","db_pbo_penjualan");
+            Con = kon.getConnection();
+        //System.out.println("Berhasil ");
+        } catch (Exception e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    //methohd baca data konsumen
+    private void baca_konsumen() {
+        try {
+            stm=Con.createStatement();
+            ResultSet rs=stm.executeQuery("select kd_kons, nm_kons from konsumen");
+            rs.beforeFirst();
+            while(rs.next()) {
+                cmbKons.addItem(rs.getString(1).trim());
+            }
+            rs.close();
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    //method baca data barang
+    private void baca_barang() {
+        try {
+            stm=Con.createStatement();
+            ResultSet rs=stm.executeQuery("select * from barang");
+            rs.beforeFirst();
+            while(rs.next()) {
+                cmbBrg.addItem(rs.getString(1).trim());
+            }
+                rs.close();
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    //method baca barang setelah combo barang di klik
+    private void detail_barang(String xkode) {
+        try{
+            stm=Con.createStatement();
+            ResultSet rs=stm.executeQuery("select * from barang where kd_brg='"+xkode+"'");
+            rs.beforeFirst();
+            while(rs.next()) {
+                txtNamaBrg.setText(rs.getString(2).trim());
+                txtHrgBrg.setText(Double.toString((Double)rs.getDouble(4)));
+            }
+            rs.close();
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    //method baca konsumen setelah combo konsumen di klik
+    private void detail_konsumen(String xkode) {
+        try{
+            stm=Con.createStatement();
+            ResultSet rs=stm.executeQuery("select * from konsumen where kd_kons='"+xkode+"'");
+            rs.beforeFirst();
+            while(rs.next()) {
+                txtNamaKons.setText(rs.getString(2).trim());
+            }
+            rs.close();
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    //method set model tabel
+    public void inisialisasi_tabel() {
+        tblJual.setModel(tableModel);
+    }
+    
+    //method pengkosongan isian
+    //----
+    private void kosong() {
+        txtNoJual.setText("");
+        txtNamaBrg.setText("");
+        txtHrgBrg.setText("");
+        txtTotal.setText("");
+    }
+    //---
+    //method kosongkan detail jual
+    private void kosong_detail() {
+        txtNamaBrg.setText("");
+        txtHrgBrg.setText("");
+        txtJmlBrg.setText("");
+        txtTotBrg.setText("");
+    }
+    //method aktif on/off isian
+    private void aktif(boolean x) {
+        cmbKons.setEnabled(x);
+        cmbBrg.setEnabled(x);
+        txtTglJual.setEnabled(x);
+        txtJmlBrg.setEditable(x);
+    }
+    //method set tombol on/off
+    private void setTombol(boolean t) {
+        btnTambah.setEnabled(t);
+        btnSimpan.setEnabled(!t);
+        btnBatal.setEnabled(!t);
+        btnKeluar.setEnabled(t);
+        btnHapusItem.setEnabled(!t);
+    }
+    //method buat nomor jual otomatis
+    private void nomor_jual() {
+        try{
+            stm=Con.createStatement();
+            ResultSet rs=stm.executeQuery("select no_jual from jual");
+            int brs=0;
+            while(rs.next()) {
+                brs=rs.getRow();
+            }
+            if(brs==0) {
+                txtNoJual.setText("1");
+            } else {
+                int nom=brs+1;
+                txtNoJual.setText(Integer.toString(nom));
+            }
+            rs.close();
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    
+    //method simpan detail jual di tabel
+    private void simpan_ditabel() {
+        try{
+            String tKode=cmbBrg.getSelectedItem().toString();
+            String tNama=txtNamaBrg.getText();
+            double hrg=Double.parseDouble(txtHrgBrg.getText());
+            int jml=Integer.parseInt(txtJmlBrg.getText());
+            double tot=Double.parseDouble(txtTotBrg.getText());
+            tableModel.addRow(new Object[]{tKode,tNama,hrg,jml,tot});
+            inisialisasi_tabel();
+        } catch(Exception e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    
+    //method simpan transaksi penjualan pada table di MySql
+    private void simpan_transaksi() {
+        try{
+            String xnojual=txtNoJual.getText();
+            format_tanggal();
+            String xkode=cmbKons.getSelectedItem().toString();
+            String msql="insert into jual values('"+xnojual+"','"+xkode+"','"+tanggal+"')";
+            stm.executeUpdate(msql);
+            for(int i=0;i<tblJual.getRowCount();i++) {
+                String xkd=(String)tblJual.getValueAt(i,0);
+                double xhrg=(Double)tblJual.getValueAt(i,2);
+                int xjml=(Integer)tblJual.getValueAt(i,3);
+                String zsql="insert into djual values('"+xnojual+"','"+xkd+"',"+xhrg+","+xjml+")";
+                stm.executeUpdate(zsql);
+            }
+        } catch(SQLException e) {
+            System.out.println("Error : "+e);
+        }
+    }
+    
+    //method membuat format tanggal sesuai dengan MySQL
+    private void format_tanggal() {
+        String DATE_FORMAT = "yyyy-MM-dd";
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(DATE_FORMAT);
+        Calendar c1 = Calendar.getInstance();
+        int year=c1.get(Calendar.YEAR);
+        int month=c1.get(Calendar.MONTH)+1;
+        int day=c1.get(Calendar.DAY_OF_MONTH);
+        tanggal=Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
+    }
+  
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -32,25 +236,25 @@ public class FormTransaksi extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jSpinner1 = new javax.swing.JSpinner();
-        jComboBox1 = new javax.swing.JComboBox<>();
-        jTextField2 = new javax.swing.JTextField();
-        jComboBox2 = new javax.swing.JComboBox<>();
-        jTextField3 = new javax.swing.JTextField();
-        jTextField4 = new javax.swing.JTextField();
-        jTextField5 = new javax.swing.JTextField();
-        jTextField6 = new javax.swing.JTextField();
-        jButton1 = new javax.swing.JButton();
+        txtNoJual = new javax.swing.JTextField();
+        txtTglJual = new javax.swing.JSpinner();
+        cmbKons = new javax.swing.JComboBox<>();
+        txtNamaKons = new javax.swing.JTextField();
+        cmbBrg = new javax.swing.JComboBox<>();
+        txtNamaBrg = new javax.swing.JTextField();
+        txtHrgBrg = new javax.swing.JTextField();
+        txtJmlBrg = new javax.swing.JTextField();
+        txtTotBrg = new javax.swing.JTextField();
+        btnHapusItem = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable();
+        tblJual = new javax.swing.JTable();
         jLabel5 = new javax.swing.JLabel();
-        jTextField7 = new javax.swing.JTextField();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
-        jButton5 = new javax.swing.JButton();
-        jButton6 = new javax.swing.JButton();
+        txtTotal = new javax.swing.JTextField();
+        btnTambah = new javax.swing.JButton();
+        btnSimpan = new javax.swing.JButton();
+        btnBatal = new javax.swing.JButton();
+        btnCetak = new javax.swing.JButton();
+        btnKeluar = new javax.swing.JButton();
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -75,27 +279,32 @@ public class FormTransaksi extends javax.swing.JFrame {
 
         jLabel4.setText("Nama Konsumen");
 
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+        txtNoJual.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
+                txtNoJualActionPerformed(evt);
             }
         });
 
-        jSpinner1.setModel(new javax.swing.SpinnerDateModel(new java.util.Date(1690523520000L), null, null, java.util.Calendar.DAY_OF_WEEK_IN_MONTH));
+        txtTglJual.setModel(new javax.swing.SpinnerDateModel(new java.util.Date(1690523520000L), null, null, java.util.Calendar.DAY_OF_WEEK_IN_MONTH));
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbKons.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
-        jComboBox2.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-
-        jTextField4.addActionListener(new java.awt.event.ActionListener() {
+        cmbBrg.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cmbBrg.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField4ActionPerformed(evt);
+                cmbBrgActionPerformed(evt);
             }
         });
 
-        jButton1.setText("Hapus Item");
+        txtHrgBrg.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtHrgBrgActionPerformed(evt);
+            }
+        });
 
-        jTable2.setModel(new javax.swing.table.DefaultTableModel(
+        btnHapusItem.setText("Hapus Item");
+
+        tblJual.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -106,19 +315,24 @@ public class FormTransaksi extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane2.setViewportView(jTable2);
+        jScrollPane2.setViewportView(tblJual);
 
         jLabel5.setText("Total");
 
-        jButton2.setText("Tambah");
+        btnTambah.setText("Tambah");
+        btnTambah.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnTambahActionPerformed(evt);
+            }
+        });
 
-        jButton3.setText("Simpan");
+        btnSimpan.setText("Simpan");
 
-        jButton4.setText("Batal");
+        btnBatal.setText("Batal");
 
-        jButton5.setText("Cetak");
+        btnCetak.setText("Cetak");
 
-        jButton6.setText("Keluar");
+        btnKeluar.setText("Keluar");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -130,35 +344,35 @@ public class FormTransaksi extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnTambah, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnSimpan, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnBatal, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnCetak, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(btnKeluar, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(cmbBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(txtNamaBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                                     .addGroup(layout.createSequentialGroup()
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                             .addComponent(jLabel1)
                                             .addComponent(jLabel2))
                                         .addGap(36, 36, 36)
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(jTextField1)
-                                            .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                            .addComponent(txtNoJual)
+                                            .addComponent(txtTglJual, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtHrgBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(txtJmlBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -166,18 +380,18 @@ public class FormTransaksi extends javax.swing.JFrame {
                                             .addComponent(jLabel3))
                                         .addGap(28, 28, 28)))
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                    .addComponent(txtNamaKons, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtTotBrg, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(cmbKons, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel5)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(txtTotal, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 524, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(btnHapusItem, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 25, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
@@ -187,49 +401,57 @@ public class FormTransaksi extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(jLabel3)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txtNoJual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cmbKons, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(jLabel4)
-                    .addComponent(jSpinner1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txtTglJual, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtNamaKons, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(cmbBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtHrgBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtJmlBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtTotBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txtNamaBrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jButton1)
+                .addComponent(btnHapusItem)
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 275, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel5)
-                    .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txtTotal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2)
-                    .addComponent(jButton3)
-                    .addComponent(jButton4)
-                    .addComponent(jButton5)
-                    .addComponent(jButton6))
+                    .addComponent(btnTambah)
+                    .addComponent(btnSimpan)
+                    .addComponent(btnBatal)
+                    .addComponent(btnCetak)
+                    .addComponent(btnKeluar))
                 .addContainerGap(25, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+    private void txtNoJualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNoJualActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
+    }//GEN-LAST:event_txtNoJualActionPerformed
 
-    private void jTextField4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField4ActionPerformed
+    private void txtHrgBrgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtHrgBrgActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField4ActionPerformed
+    }//GEN-LAST:event_txtHrgBrgActionPerformed
+
+    private void cmbBrgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbBrgActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cmbBrgActionPerformed
+
+    private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnTambahActionPerformed
 
     /**
      * @param args the command line arguments
@@ -267,14 +489,14 @@ public class FormTransaksi extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
-    private javax.swing.JButton jButton6;
-    private javax.swing.JComboBox<String> jComboBox1;
-    private javax.swing.JComboBox<String> jComboBox2;
+    private javax.swing.JButton btnBatal;
+    private javax.swing.JButton btnCetak;
+    private javax.swing.JButton btnHapusItem;
+    private javax.swing.JButton btnKeluar;
+    private javax.swing.JButton btnSimpan;
+    private javax.swing.JButton btnTambah;
+    private javax.swing.JComboBox<String> cmbBrg;
+    private javax.swing.JComboBox<String> cmbKons;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -282,15 +504,15 @@ public class FormTransaksi extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JSpinner jSpinner1;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTable jTable2;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
-    private javax.swing.JTextField jTextField4;
-    private javax.swing.JTextField jTextField5;
-    private javax.swing.JTextField jTextField6;
-    private javax.swing.JTextField jTextField7;
+    private javax.swing.JTable tblJual;
+    private javax.swing.JTextField txtHrgBrg;
+    private javax.swing.JTextField txtJmlBrg;
+    private javax.swing.JTextField txtNamaBrg;
+    private javax.swing.JTextField txtNamaKons;
+    private javax.swing.JTextField txtNoJual;
+    private javax.swing.JSpinner txtTglJual;
+    private javax.swing.JTextField txtTotBrg;
+    private javax.swing.JTextField txtTotal;
     // End of variables declaration//GEN-END:variables
 }
